@@ -8,7 +8,7 @@ import {
   Droplets, Beer, Star, Flame, Sparkles, Crown,
   AlertTriangle, CheckCircle2, XCircle, Warehouse,
   CircleDollarSign, GlassWater, Disc3, Wine,
-  Snowflake, RefreshCw, ArrowDownCircle,
+  Snowflake, RefreshCw, ArrowDownCircle, Pencil,
 } from 'lucide-react'
 
 // ─── Types ───
@@ -285,6 +285,39 @@ export default function App() {
     setSubmitting(false)
   }
 
+  // ─── Editar Estoque (corrigir contagem) ───
+  const editarEstoque = async (produtoId: number, nome: string) => {
+    const est = getEst(produtoId)
+    const atualQty = est?.quantidade_atual ?? 0
+    const inicialQty = est?.quantidade_total_inicial ?? 0
+
+    const novaAtualStr = window.prompt(`✏️ EDITAR: ${nome}\n\nQuantidade ATUAL (hoje: ${atualQty}):`)
+    if (!novaAtualStr) return
+    const novaAtual = parseInt(novaAtualStr)
+
+    const novaInicialStr = window.prompt(`📦 EDITAR: ${nome}\n\nQuantidade INICIAL TOTAL (hoje: ${inicialQty}):`)
+    if (!novaInicialStr) return
+    const novaInicial = parseInt(novaInicialStr)
+
+    if (isNaN(novaAtual) || isNaN(novaInicial) || novaAtual < 0 || novaInicial < 0) {
+      showToast('error', 'Valores inválidos!')
+      return
+    }
+
+    setSubmitting(true)
+    const { error } = await supabase.from('estoque')
+      .update({ quantidade_atual: novaAtual, quantidade_total_inicial: novaInicial })
+      .eq('produto_id', produtoId)
+
+    if (error) {
+      showToast('error', 'Erro: ' + error.message)
+    } else {
+      showToast('success', `✅ ${nome}: ${novaAtual}/${novaInicial}`)
+      await fetchAll()
+    }
+    setSubmitting(false)
+  }
+
   // ─── Dashboard calcs ───
   const today = new Date().toISOString().split('T')[0]
   const tVendas = useMemo(() => vendas.filter(v => v.data_hora_venda?.startsWith(today)), [vendas, today])
@@ -352,10 +385,26 @@ export default function App() {
 
       <main className="flex-1 overflow-y-auto pb-44">
 
-        {/* ═══ VENDER — Brand-colored cards ═══ */}
+        {/* ═══ VENDER — Full-height cards + Mask BG ═══ */}
         {tab === 'vender' && (
-          <div className="p-4 animate-fade-in">
-            <div className="grid grid-cols-3 gap-3">
+          <div className="p-2 animate-fade-in relative" style={{ height: 'calc(100vh - 8rem)' }}>
+            {/* Carnival mask watermark */}
+            <svg className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 opacity-[0.05] pointer-events-none z-0" viewBox="0 0 200 200" fill="none">
+              <path d="M100 40C60 40 30 65 25 95C23 108 28 120 40 125C50 129 62 126 70 118C78 110 88 105 100 105C112 105 122 110 130 118C138 126 150 129 160 125C172 120 177 108 175 95C170 65 140 40 100 40Z" fill="#1A2E1F" />
+              <ellipse cx="70" cy="85" rx="18" ry="14" fill="white" />
+              <ellipse cx="130" cy="85" rx="18" ry="14" fill="white" />
+              <path d="M85 125C90 132 95 135 100 135C105 135 110 132 115 125" stroke="#1A2E1F" strokeWidth="3" strokeLinecap="round" />
+              <path d="M25 80C15 75 8 82 5 90" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" />
+              <path d="M175 80C185 75 192 82 195 90" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" />
+              <circle cx="55" cy="50" r="4" fill="#059669" />
+              <circle cx="100" cy="35" r="5" fill="#059669" />
+              <circle cx="145" cy="50" r="4" fill="#059669" />
+              <path d="M45 45L55 50L50 38" stroke="#059669" strokeWidth="1.5" />
+              <path d="M90 32L100 35L95 25" stroke="#059669" strokeWidth="1.5" />
+              <path d="M135 45L145 50L140 38" stroke="#059669" strokeWidth="1.5" />
+            </svg>
+
+            <div className="grid grid-cols-3 gap-2 h-full relative z-10" style={{ gridTemplateRows: 'repeat(3, 1fr)' }}>
               {produtos.map((prod, idx) => {
                 const est = getEst(prod.id)
                 const qty = cart[prod.id] || 0
@@ -371,55 +420,52 @@ export default function App() {
                       animationDelay: `${idx * 40}ms`,
                       ...(qty > 0 ? { boxShadow: `0 0 14px ${vis.btnColor}40`, ['--tw-ring-color' as string]: `${vis.btnColor}99` } : {}),
                     } as React.CSSProperties}
-                    className={`rounded-2xl p-3 flex flex-col items-center text-center animate-fade-in transition-all duration-200 shadow-lg ${qty > 0 ? 'ring-2' : ''} ${out ? 'opacity-30 grayscale' : ''}`}
+                    className={`rounded-2xl p-2 flex flex-col items-center justify-center text-center animate-fade-in transition-all duration-200 shadow-md ${qty > 0 ? 'ring-2' : ''} ${out ? 'opacity-30 grayscale' : ''}`}
                   >
-                    {/* Icon in frosted box */}
-                    <div className="icon-box w-12 h-12 rounded-xl flex items-center justify-center">
-                      <div className="w-7 h-7 text-white">{vis.icon}</div>
+                    <div className="icon-box w-9 h-9 rounded-lg flex items-center justify-center">
+                      <div className="w-5 h-5 text-white">{vis.icon}</div>
                     </div>
 
-                    <p className="text-[11px] font-bold text-white leading-tight line-clamp-2 mt-2 mb-1 min-h-[28px] drop-shadow-sm">
+                    <p className="text-[10px] font-bold text-white leading-tight line-clamp-1 mt-1 mb-0.5 drop-shadow-sm">
                       {prod.nome}
                     </p>
 
-                    <p className="text-sm font-black text-white number-display mb-0.5 drop-shadow-sm">
+                    <p className="text-xs font-black text-white number-display drop-shadow-sm">
                       {fmt(prod.preco_venda_sugerido)}
                     </p>
 
-                    {/* Promo badge */}
                     {hasPromo(prod.id) && (
-                      <p className="text-[8px] font-bold text-white/90 bg-white/20 rounded-full px-2 py-0.5 mb-0.5">
+                      <p className="text-[7px] font-bold text-white/90 bg-white/20 rounded-full px-1.5 py-0.5 mt-0.5">
                         🏷️ {getPromoLabel(prod.id)}
                       </p>
                     )}
 
-                    {/* Stock or subtotal */}
                     {qty > 0 ? (
-                      <p className="text-[9px] font-bold text-white/90 mb-2 number-display">
+                      <p className="text-[8px] font-bold text-white/90 mt-0.5 number-display">
                         = {fmt(calcularPrecoItem(prod.id, qty))}
                       </p>
                     ) : (
-                      <p className="text-[9px] font-semibold text-white/70 mb-2">{atual}un</p>
+                      <p className="text-[8px] font-semibold text-white/70 mt-0.5">{atual}un</p>
                     )}
 
                     {qty > 0 ? (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 mt-1">
                         <button onClick={() => remove(prod.id)}
-                          className="w-8 h-8 rounded-lg bg-white/20 text-white flex items-center justify-center press-scale">
-                          <Minus className="w-3.5 h-3.5" strokeWidth={2.5} />
+                          className="w-7 h-7 rounded-lg bg-white/20 text-white flex items-center justify-center press-scale">
+                          <Minus className="w-3 h-3" strokeWidth={2.5} />
                         </button>
-                        <span className="w-6 text-center text-sm font-black text-white number-display">{qty}</span>
+                        <span className="w-5 text-center text-xs font-black text-white number-display">{qty}</span>
                         <button onClick={() => add(prod.id)} disabled={out}
-                          className="w-8 h-8 rounded-lg flex items-center justify-center press-scale"
-                          style={{ background: 'white', border: `2px solid ${vis.btnColor}`, color: vis.btnColor, boxShadow: `0 0 8px ${vis.btnColor}50` }}>
-                          <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+                          className="w-7 h-7 rounded-lg flex items-center justify-center press-scale"
+                          style={{ background: 'white', border: `2px solid ${vis.btnColor}`, color: vis.btnColor }}>
+                          <Plus className="w-3 h-3" strokeWidth={3} />
                         </button>
                       </div>
                     ) : (
                       <button onClick={() => add(prod.id)} disabled={out}
-                        className="w-10 h-10 rounded-xl flex items-center justify-center press-scale"
-                        style={{ background: 'white', border: `2px solid ${vis.btnColor}`, color: vis.btnColor, boxShadow: `0 0 8px ${vis.btnColor}50` }}>
-                        <Plus className="w-5 h-5" strokeWidth={3} />
+                        className="w-8 h-8 rounded-xl flex items-center justify-center press-scale mt-1"
+                        style={{ background: 'white', border: `2px solid ${vis.btnColor}`, color: vis.btnColor, boxShadow: `0 0 6px ${vis.btnColor}40` }}>
+                        <Plus className="w-4 h-4" strokeWidth={3} />
                       </button>
                     )}
                   </div>
@@ -445,13 +491,13 @@ export default function App() {
             </div>
 
             {/* Metrics — white */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="metric-card rounded-2xl p-3">
                 <div className="flex items-center gap-1 mb-1.5">
                   <TrendingUp className="w-3.5 h-3.5 text-green" strokeWidth={1.5} />
-                  <p className="text-[9px] text-text-muted uppercase tracking-wider font-medium">Saldo</p>
+                  <p className="text-[9px] text-text-muted uppercase tracking-wider font-medium">Líquido</p>
                 </div>
-                <p className={`text-lg font-black number-display ${saldoCaixa >= 0 ? 'text-green-dark' : 'text-danger'}`}>{fmt(saldoCaixa)}</p>
+                <p className="text-lg font-black text-green-dark number-display">{fmt(liquido)}</p>
               </div>
               <div className="metric-card rounded-2xl p-3">
                 <div className="flex items-center gap-1 mb-1.5">
@@ -459,6 +505,13 @@ export default function App() {
                   <p className="text-[9px] text-text-muted uppercase tracking-wider font-medium">Despesas</p>
                 </div>
                 <p className="text-lg font-black text-danger number-display">{fmt(despesasTotal)}</p>
+              </div>
+              <div className="metric-card rounded-2xl p-3">
+                <div className="flex items-center gap-1 mb-1.5">
+                  <Zap className="w-3.5 h-3.5 text-blue-500" strokeWidth={1.5} />
+                  <p className="text-[9px] text-text-muted uppercase tracking-wider font-medium">Saldo Caixa</p>
+                </div>
+                <p className={`text-lg font-black number-display ${saldoCaixa >= 0 ? 'text-green-dark' : 'text-danger'}`}>{fmt(saldoCaixa)}</p>
               </div>
               <div className="metric-card rounded-2xl p-3">
                 <div className="flex items-center gap-1 mb-1.5">
@@ -555,13 +608,13 @@ export default function App() {
         {/* ═══ ESTOQUE — Brand-colored cards ═══ */}
         {tab === 'estoque' && (
           <div className="p-4 space-y-4 animate-fade-in">
-            <div className="green-card rounded-2xl p-5 text-center">
-              <Warehouse className="w-7 h-7 text-white/70 mx-auto mb-1.5" strokeWidth={1.5} />
+            <div className="green-card rounded-2xl p-4 text-center relative">
+              <Warehouse className="w-6 h-6 text-white/70 mx-auto mb-1" strokeWidth={1.5} />
               <p className="text-[10px] text-white/60 uppercase tracking-[0.15em] mb-1">Estoque Restante</p>
-              <p className="text-4xl font-black text-white number-display">
+              <p className="text-3xl font-black text-white number-display">
                 {estoque.reduce((s, e) => s + e.quantidade_atual, 0)}
               </p>
-              <p className="text-[11px] text-white/50 mt-1">
+              <p className="text-[11px] text-white/50 mt-0.5">
                 de {estoque.reduce((s, e) => s + e.quantidade_total_inicial, 0)} iniciais
               </p>
             </div>
@@ -578,15 +631,21 @@ export default function App() {
                 return (
                   <div key={prod.id}
                     style={{ background: vis.gradient, animationDelay: `${idx * 40}ms` }}
-                    className={`rounded-2xl p-3 flex flex-col items-center text-center animate-fade-in shadow-lg ${isLow ? 'ring-1 ring-red-400/50' : ''}`}>
-                    <div className="icon-box w-10 h-10 rounded-lg flex items-center justify-center [&>svg]:w-5 [&>svg]:h-5">
-                      <div className="text-white [&>svg]:w-5 [&>svg]:h-5">{vis.icon}</div>
+                    className={`rounded-2xl p-2.5 flex flex-col items-center text-center animate-fade-in shadow-lg relative ${isLow ? 'ring-1 ring-red-400/50' : ''}`}>
+                    {/* Edit button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); editarEstoque(prod.id, prod.nome) }}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-md bg-white/20 flex items-center justify-center active:bg-white/40 transition-colors">
+                      <Pencil className="w-3 h-3 text-white" strokeWidth={1.5} />
+                    </button>
+                    <div className="icon-box w-9 h-9 rounded-lg flex items-center justify-center [&>svg]:w-4 [&>svg]:h-4">
+                      <div className="text-white [&>svg]:w-4 [&>svg]:h-4">{vis.icon}</div>
                     </div>
-                    <p className="text-[10px] font-bold text-white leading-tight line-clamp-2 mt-1.5 mb-1 min-h-[24px] drop-shadow-sm">
+                    <p className="text-[9px] font-bold text-white leading-tight line-clamp-2 mt-1 mb-0.5 min-h-[20px] drop-shadow-sm">
                       {prod.nome}
                     </p>
-                    <p className={`text-2xl font-black number-display mb-0.5 drop-shadow-sm ${pct > 50 ? 'text-white' : pct > 25 ? 'text-yellow-100' : 'text-red-100'}`}>{atual}</p>
-                    <p className="text-[9px] text-white/60 mb-2">de {inicial}</p>
+                    <p className={`text-xl font-black number-display mb-0.5 drop-shadow-sm ${pct > 50 ? 'text-white' : pct > 25 ? 'text-yellow-100' : 'text-red-100'}`}>{atual}</p>
+                    <p className="text-[8px] text-white/60 mb-1">de {inicial}</p>
                     <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full stock-bar ${pct > 50 ? 'bg-white' : pct > 25 ? 'bg-yellow-100' : 'bg-red-200'}`}
