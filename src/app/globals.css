@@ -1,26 +1,180 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --green-dark: #065F46;
+  --green: #059669;
+  --green-neon: #00FF88;
+  --text-dark: #1A2E1F;
+  --text-muted: #6B8F7E;
+  --danger: #DC2626;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: #FFFFFF;
+  --color-green-dark: var(--green-dark);
+  --color-green: var(--green);
+  --color-green-neon: var(--green-neon);
+  --color-text-dark: var(--text-dark);
+  --color-text-muted: var(--text-muted);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-sora);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #FFFFFF !important;
+  color: var(--text-dark);
+  font-family: var(--font-sora), system-ui, sans-serif;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* ── Frosted Icon Box ── */
+.icon-box {
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Glass Header / Nav ── */
+.glass-header {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* ── White metric card (dashboard) ── */
+.metric-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Green accent card (hero) ── */
+.green-card {
+  background: linear-gradient(145deg, #059669, #10B981);
+  border: 1px solid rgba(0, 255, 136, 0.2);
+  box-shadow: 0 4px 20px rgba(5, 150, 105, 0.18);
+  color: white;
+}
+
+/* ── Add Button (white bg, neon +) ── */
+.add-btn {
+  background: white;
+  border: 2px solid var(--green-neon);
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.3), 0 0 20px rgba(0, 255, 136, 0.1);
+  color: var(--green-neon);
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.add-btn:active {
+  transform: scale(0.92);
+  box-shadow: 0 0 12px rgba(0, 255, 136, 0.5), 0 0 28px rgba(0, 255, 136, 0.2);
+}
+
+.add-btn:disabled {
+  background: #f0f0f0;
+  border-color: #ddd;
+  box-shadow: none;
+  color: #bbb;
+}
+
+/* ── Neon CTA ── */
+.neon-btn {
+  background: var(--green);
+  border: 2px solid var(--green-neon);
+  box-shadow: 0 0 6px rgba(0, 255, 136, 0.35), 0 0 18px rgba(0, 255, 136, 0.12);
+  color: white;
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.neon-btn:active {
+  transform: scale(0.93);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.5), 0 0 25px rgba(0, 255, 136, 0.2);
+}
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseNeon {
+
+  0%,
+  100% {
+    box-shadow: 0 0 6px rgba(0, 255, 136, 0.35), 0 0 18px rgba(0, 255, 136, 0.12);
+  }
+
+  50% {
+    box-shadow: 0 0 12px rgba(0, 255, 136, 0.5), 0 0 30px rgba(0, 255, 136, 0.2);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-neon {
+  animation: pulseNeon 2.5s ease-in-out infinite;
+}
+
+.press-scale {
+  transition: transform 0.1s ease;
+}
+
+.press-scale:active {
+  transform: scale(0.95);
+}
+
+.stock-bar {
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.number-display {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
